@@ -48,7 +48,14 @@ class MainActivityTest {
     private fun buttons(group: ViewGroup) = (0 until group.childCount).map { group.getChildAt(it) as Button }
 
     @Test
-    fun playsAWholeGameThroughTheUi() {
+    fun playsAWholeGameIn25D() = runGame(view3d = true, prefix = "25d_", fullGame = true)
+
+    @Test
+    fun playsARoundIn2D() = runGame(view3d = false, prefix = "2d_", fullGame = false)
+
+    private fun runGame(view3d: Boolean, prefix: String, fullGame: Boolean) {
+        org.robolectric.RuntimeEnvironment.getApplication().getSharedPreferences("mahjong", android.content.Context.MODE_PRIVATE)
+            .edit().clear().putBoolean("view3d", view3d).commit()
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val table = activity.findViewById<TableView>(R.id.table)
         val actions = activity.findViewById<ViewGroup>(R.id.actions)
@@ -67,12 +74,13 @@ class MainActivityTest {
                     dialog.listView.performItemClick(null, 0, 0); dialog.dismiss(); continue
                 }
                 rounds++
-                if (!shotResult) { shot(dialog.window!!.decorView, "result_dialog.png"); shot(activity.window.decorView, "result_table.png"); shotResult = true }
+                if (!shotResult) { shot(dialog.window!!.decorView, prefix + "result_dialog.png"); shot(activity.window.decorView, prefix + "result_table.png"); shotResult = true }
                 val over = g.phase == Phase.GAME_END
+                if (!fullGame) { finalScores = g.players.map { it.score }; break }
                 if (over) {
                     finalScores = g.players.map { it.score }
                     assertEquals(100_000, g.totalPoints())
-                    shot(dialog.window!!.decorView, "game_over.png")
+                    shot(dialog.window!!.decorView, prefix + "game_over.png")
                 }
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
                 looper.idle()
@@ -84,7 +92,7 @@ class MainActivityTest {
                 if (!shotTurn && g.players[0].melds.isEmpty() && humanTurns >= 4) {
                     activity.findViewById<Button>(R.id.btn_hint).performClick()
                     looper.idle()
-                    shot(activity.window.decorView, "turn_with_hint.png"); shotTurn = true
+                    shot(activity.window.decorView, prefix + "turn_with_hint.png"); shotTurn = true
                 }
                 when (val a = Ai.decideTurn(g, 0)) {
                     TurnAction.Tsumo -> buttons(actions).first { it.text == activity.getString(R.string.tsumo) }.performClick()
@@ -102,7 +110,7 @@ class MainActivityTest {
             }
             if (g.phase == Phase.CALLS && MainActivity.HUMAN in g.pendingCalls && actions.childCount > 0) {
                 humanCalls++
-                if (!shotCall) { shot(activity.window.decorView, "call_prompt.png"); shotCall = true }
+                if (!shotCall) { shot(activity.window.decorView, prefix + "call_prompt.png"); shotCall = true }
                 val label = when (Ai.decideCall(g, 0, g.pendingCalls.getValue(0))) {
                     CallAction.Ron -> R.string.ron
                     is CallAction.Pon -> R.string.pon
@@ -115,7 +123,7 @@ class MainActivityTest {
             }
         }
         println("UI game: rounds=$rounds humanTurns=$humanTurns humanCalls=$humanCalls final=$finalScores")
-        assertTrue(rounds >= 4 && humanTurns > 20)
+        assertTrue(if (fullGame) rounds >= 4 && humanTurns > 20 else rounds >= 1)
         assertTrue(finalScores.isNotEmpty())
     }
 }

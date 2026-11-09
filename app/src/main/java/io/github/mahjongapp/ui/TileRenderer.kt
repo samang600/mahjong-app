@@ -43,6 +43,7 @@ class TileRenderer(private val redFives: () -> Boolean) {
         canvas: Canvas, id: Int, x: Float, y: Float, w: Float, h: Float,
         rotation: Int = 0, faceDown: Boolean = false, highlightColor: Int = 0, dimmed: Boolean = false,
         depth: Float = 0f,
+        worldRotation: Float? = null,
     ) {
         canvas.save()
         val cx = x + w / 2; val cy = y + h / 2
@@ -51,13 +52,27 @@ class TileRenderer(private val redFives: () -> Boolean) {
         val tw = if (rotation % 180 == 0) w else h
         val th = if (rotation % 180 == 0) h else w
         val rad = tw * 0.12f
-        // Body (thickness shown as a darker strip below the face).
         val d = if (depth > 0f) depth else th * 0.08f
-        r.set(-tw / 2 + d * 0.3f, -th / 2 + d * 0.6f, tw / 2 + d * 0.3f, th / 2 + d * 0.6f)
-        canvas.drawRoundRect(r, rad, rad, shadow)
-        r.set(-tw / 2, -th / 2 + d, tw / 2, th / 2)
-        canvas.drawRoundRect(r, rad, rad, if (faceDown) back else side)
-        r.set(-tw / 2, -th / 2, tw / 2, th / 2 - d)
+        val faceBottom: Float
+        if (worldRotation == null) {
+            // 2D: thickness shown as a darker strip below the face.
+            r.set(-tw / 2 + d * 0.3f, -th / 2 + d * 0.6f, tw / 2 + d * 0.3f, th / 2 + d * 0.6f)
+            canvas.drawRoundRect(r, rad, rad, shadow)
+            r.set(-tw / 2, -th / 2 + d, tw / 2, th / 2)
+            canvas.drawRoundRect(r, rad, rad, if (faceDown) back else side)
+            faceBottom = th / 2 - d
+        } else {
+            // 2.5D: a tile lying on the table shows its edge towards the viewer (world +y). In this
+            // tile's local axes that direction is (sin R, cos R), R = total rotation from world.
+            val a = Math.toRadians(worldRotation.toDouble() + rotation)
+            val dx = (Math.sin(a) * d).toFloat(); val dy = (Math.cos(a) * d).toFloat()
+            r.set(-tw / 2 + dx * 1.6f, -th / 2 + dy * 1.6f, tw / 2 + dx * 1.6f, th / 2 + dy * 1.6f)
+            canvas.drawRoundRect(r, rad, rad, shadow)
+            r.set(-tw / 2 + dx, -th / 2 + dy, tw / 2 + dx, th / 2 + dy)
+            canvas.drawRoundRect(r, rad, rad, if (faceDown) back else side)
+            faceBottom = th / 2
+        }
+        r.set(-tw / 2, -th / 2, tw / 2, faceBottom)
         if (faceDown) {
             canvas.drawRoundRect(r, rad, rad, backRim)
             r.inset(tw * 0.08f, tw * 0.08f)
@@ -72,7 +87,7 @@ class TileRenderer(private val redFives: () -> Boolean) {
         if (highlightColor != 0) {
             highlight.color = highlightColor
             highlight.strokeWidth = tw * 0.07f
-            r.set(-tw / 2, -th / 2, tw / 2, th / 2 - d)
+            r.set(-tw / 2, -th / 2, tw / 2, faceBottom)
             canvas.drawRoundRect(r, rad, rad, highlight)
         }
         canvas.restore()

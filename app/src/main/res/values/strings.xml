@@ -37,4 +37,6 @@
     <string name="about">About</string>
     <string name="about_text">Riichi mahjong against three CPU players.\n\nThe CPU and the hint use tile efficiency (shanten and tile acceptance) and defence against riichi.</string>
     <string name="rank">%1$d. %2$s  %3$d</string>
+    <string name="view_2d">Switch to 2D view</string>
+    <string name="view_25d">Switch to 2.5D view</string>
 </resources>

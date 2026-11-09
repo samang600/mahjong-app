@@ -56,6 +56,7 @@ class MainActivity : Activity() {
         actions = findViewById(R.id.actions)
         info = findViewById(R.id.info)
         table.onTileTap = ::onTileTap
+        table.perspective = prefs.getBoolean("view3d", true)
         findViewById<Button>(R.id.btn_hint).setOnClickListener { showHint() }
         findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu() }
         table.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> placeActions(v.width, v.height) }
@@ -370,7 +371,9 @@ class MainActivity : Activity() {
     private fun showMenu() {
         val red = prefs.getBoolean("red", true)
         val kuitan = prefs.getBoolean("kuitan", true)
+        val view3d = table.perspective
         val items = arrayOf(
+            getString(if (view3d) R.string.view_2d else R.string.view_25d),
             getString(R.string.east_game),
             getString(R.string.south_game),
             getString(R.string.settings_red) + if (red) "  ✓" else "",
@@ -378,7 +381,8 @@ class MainActivity : Activity() {
             getString(R.string.about),
         )
         AlertDialog.Builder(this).setItems(items) { _, i ->
-            when (i) {
+            when (i - 1) {
+                -1 -> { table.perspective = !view3d; prefs.edit().putBoolean("view3d", table.perspective).apply() }
                 0 -> newGame(1)
                 1 -> newGame(2)
                 2 -> { prefs.edit().putBoolean("red", !red).apply(); setInfo(getString(R.string.rules_next_game)) }

@@ -2,7 +2,7 @@
 
 Japanese riichi mahjong against three CPU players, with a hint that recommends your discard.
 
-## Features (v0.1)
+## Features (v0.2)
 
 - **Rules**: 4 players, 136 tiles with red fives (optional), open tanyao (optional), east-only or
   east+south games. Chi / pon / kans (closed, added, open) with replacement draws and kan dora,
@@ -14,9 +14,12 @@ Japanese riichi mahjong against three CPU players, with a hint that recommends y
 - **CPU / hint**: tile efficiency (shanten and number of accepting tiles), defence against riichi
   (genbutsu, suji, visible honors), call and riichi decisions. The hint shows the recommended discard,
   shanten and acceptance.
-- **2D table** drawn in code (no image assets); Korean and English.
+- **2.5D table** (default): the table is drawn in perspective (a homography from the table rectangle
+  to a trapezoid), tiles on the table show their edge towards the viewer, and your hand stands in
+  front. **2D table** (top view) available from the menu. Everything is drawn in code (no image
+  assets); Korean and English.
 
-Not yet: the 2.5D (perspective) table, abortive draws (four winds, nine terminals, ...), nagashi
+Not yet: abortive draws (four winds, nine terminals, ...), nagashi
 mangan, local yaku, saving a game in progress.
 
 ## Install

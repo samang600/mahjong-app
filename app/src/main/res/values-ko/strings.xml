@@ -37,4 +37,6 @@
     <string name="about">정보</string>
     <string name="about_text">CPU 3명과 두는 리치 마작입니다.\n\nCPU와 힌트는 패 효율(향청수·유효패)과 리치 상대 방어를 기준으로 판단합니다.</string>
     <string name="rank">%1$d위 %2$s  %3$d</string>
+    <string name="view_2d">2D 화면으로 보기</string>
+    <string name="view_25d">2.5D 화면으로 보기</string>
 </resources>

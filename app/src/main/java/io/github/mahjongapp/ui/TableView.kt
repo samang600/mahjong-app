@@ -17,8 +17,12 @@ import io.github.mahjongapp.core.MeldType
 import io.github.mahjongapp.core.Tiles
 
 /**
- * The 2D table, seen from the human player (seat 0, bottom). Opponents are drawn in frames rotated
+ * The table, seen from the human player (seat 0, bottom). Opponents are drawn in frames rotated
  * around the table centre: right = seat 1, top = seat 2, left = seat 3.
+ *
+ * In [perspective] (2.5D) mode the table layer is tilted with a camera transform and fitted above
+ * the player's hand; tiles on the table show their thickness towards the viewer, and the player's
+ * own hand stays upright in front.
  */
 class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
 
@@ -37,6 +41,10 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         set(v) { field = v; invalidate() }
     var onTileTap: ((Int) -> Unit)? = null
     var tileNames: (Int) -> String = { Tiles.name(it) }
+    var perspective = false
+        set(v) { field = v; invalidate() }
+    /** How much narrower the far edge of the table is, in percent (2.5D view). */
+    var tilt = 38f
 
     val renderer = TileRenderer { game?.rules?.redFives ?: true }
 
@@ -56,6 +64,13 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     private var rw = 0f; private var rh = 0f // river tile
     private var cx = 0f; private var cy = 0f // table centre
     private var cs = 0f // centre panel side
+    /** Fixed screen unit for overlays (same as the 2D river tile). */
+    private var hud = 0f
+    /** Rotation of the current drawing frame relative to the table (for 2.5D tile edges). */
+    private var frameRot = 0f
+    private val tableMatrix = android.graphics.Matrix()
+    private val felt = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rim = Paint(Paint.ANTI_ALIAS_FLAG)
 
     override fun onDraw(canvas: Canvas) {
         val g = game ?: return
@@ -65,27 +80,82 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
 
         tw = minOf(h / 8.2f, w / 19f); th = tw * 1.36f
         val tableH = h - th * 1.25f
+        // Layout space of the table layer. In 2.5D it is laid out taller and then projected (the tilt
+        // compresses it vertically) and fitted into the screen above the hand.
+        hud = minOf(tableH / 20f, tw * 0.62f)
+        val lw = w
+        val lh = if (perspective) tableH * 1.45f else tableH
         // Above the centre: panel half (3) + 4 river rows (5.4) + top hand (1.6) ≈ 10 river widths.
-        rw = minOf(tableH / 20f, tw * 0.62f); rh = rw * 1.36f
+        rw = minOf(lh / 20f, tw * if (perspective) 0.8f else 0.62f); rh = rw * 1.36f
         cs = rw * 6f
-        cx = w / 2; cy = tableH / 2 + rh * 0.2f
+        cx = lw / 2; cy = lh / 2 + rh * 0.2f
 
+        canvas.save()
+        if (perspective) {
+            fitTableMatrix(lw, lh, w, tableH)
+            canvas.concat(tableMatrix)
+            drawTableSurface(canvas, lw, lh)
+        }
         // Opponents and own river, each in its rotated frame.
         for (rel in 0 until 4) {
             val seat = (humanSeat + rel) % 4
             canvas.save()
             canvas.translate(cx, cy)
             canvas.rotate(-90f * rel)
-            // Distance from the table centre to this side's screen edge (the centre sits above mid-screen).
-            val reach = when (rel) { 0 -> h - cy; 2 -> cy; else -> w / 2 }
+            frameRot = -90f * rel
+            // Distance from the table centre to this side's edge (the centre sits above mid-screen).
+            val reach = when (rel) { 0 -> lh - cy; 2 -> cy; else -> lw / 2 }
             drawRiver(canvas, g, seat)
             if (rel != 0) drawOpponentHand(canvas, g, seat, reach)
             drawPanelSide(canvas, g, seat)
             canvas.restore()
         }
+        frameRot = 0f
         drawPanelCenter(canvas, g)
+        canvas.restore()
         drawOwnHand(canvas, g, w, h)
         drawDoraHud(canvas, g)
+    }
+
+    /**
+     * Perspective (homography) mapping the table rectangle onto a trapezoid that fills the screen
+     * above the hand: the far edge is narrower, as seen from a seat at the table.
+     */
+    private fun fitTableMatrix(lw: Float, lh: Float, w: Float, tableH: Float) {
+        val top = hud * 0.15f
+        val bottom = tableH + th * 0.35f
+        val nearW = w * 1.04f
+        val farW = nearW * (1f - tilt / 100f)
+        // Project only down to just below the player's own river: the table nearer than that would
+        // be magnified into empty space above the hand.
+        val nearY = minOf(lh, cy + cs / 2 + rw * 0.35f + 4 * rh + rw * 0.6f)
+        val src = floatArrayOf(0f, 0f, lw, 0f, lw, nearY, 0f, nearY)
+        val dst = floatArrayOf(
+            (w - farW) / 2, top, (w + farW) / 2, top,
+            (w + nearW) / 2, bottom, (w - nearW) / 2, bottom,
+        )
+        tableMatrix.setPolyToPoly(src, 0, dst, 0, 4)
+    }
+
+    private fun drawTableSurface(c: Canvas, lw: Float, lh: Float) {
+        val pad = rw * 0.2f
+        rim.color = Color.rgb(0x4E, 0x34, 0x2E)
+        c.drawRoundRect(RectF(-pad * 3, -pad * 3, lw + pad * 3, lh + pad * 3), rw, rw, rim)
+        felt.shader = RadialGradient(cx, cy, maxOf(lw, lh) * 0.7f, Color.rgb(0x22, 0x6A, 0x9A), Color.rgb(0x10, 0x3A, 0x5C), Shader.TileMode.CLAMP)
+        c.drawRoundRect(RectF(-pad, -pad, lw + pad, lh + pad), rw * 0.6f, rw * 0.6f, felt)
+    }
+
+    /** Draws a tile on the table in the current frame (thickness towards the viewer in 2.5D). */
+    private fun tile(
+        c: Canvas, id: Int, x: Float, y: Float, w: Float, h: Float,
+        rotation: Int = 0, faceDown: Boolean = false, dimmed: Boolean = false, depth: Float = 0f,
+    ) {
+        if (perspective) {
+            val d = (if (rotation % 180 == 0) w else h) * 0.2f
+            renderer.draw(c, id, x, y, w, h, rotation, faceDown, dimmed = dimmed, depth = d, worldRotation = frameRot)
+        } else {
+            renderer.draw(c, id, x, y, w, h, rotation, faceDown, dimmed = dimmed, depth = depth)
+        }
     }
 
     // ------------------------------------------------------------------ rivers
@@ -101,10 +171,10 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
             if (r != row) { row = r; x = left }
             val y = top + row * rh
             if (t.riichi) {
-                renderer.draw(c, t.id, x, y + (rh - rw), rh, rw, rotation = 90, dimmed = t.calledAway, depth = rw * 0.06f)
+                tile(c, t.id, x, y + (rh - rw), rh, rw, rotation = 90, dimmed = t.calledAway, depth = rw * 0.06f)
                 x += rh
             } else {
-                renderer.draw(c, t.id, x, y, rw, rh, dimmed = t.calledAway, depth = rw * 0.08f)
+                tile(c, t.id, x, y, rw, rh, dimmed = t.calledAway, depth = rw * 0.08f)
                 if (lastDiscard != null && lastDiscard.seat == seat && i == p.river.size - 1 && !t.calledAway) {
                     c.drawCircle(x + rw / 2, y + rh + rw * 0.18f, rw * 0.12f, marker)
                 }
@@ -133,7 +203,7 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         var x = -total / 2
         val reveal = revealAll
         for (id in p.hand.sortedBy { Tiles.kind(it) }) {
-            renderer.draw(c, id, x, y, ow, oh, faceDown = !reveal)
+            tile(c, id, x, y, ow, oh, faceDown = !reveal)
             x += ow
         }
         x += ow * 0.5f
@@ -151,7 +221,7 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         var x = x0
         if (m.type == MeldType.ANKAN) {
             for ((i, t) in m.tiles.withIndex()) {
-                renderer.draw(c, t, x, y, w, h, faceDown = i == 0 || i == 3)
+                tile(c, t, x, y, w, h, faceDown = i == 0 || i == 3)
                 x += w
             }
             return x
@@ -164,11 +234,11 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         order.add(sidewaysIdx.coerceAtMost(order.size), m.called)
         for (t in order) {
             if (t == m.called) {
-                renderer.draw(c, t, x, y + (h - w), h, w, rotation = 90)
-                if (added >= 0) renderer.draw(c, added, x, y + (h - w) - w, h, w, rotation = 90)
+                tile(c, t, x, y + (h - w), h, w, rotation = 90)
+                if (added >= 0) tile(c, added, x, y + (h - w) - w, h, w, rotation = 90)
                 x += h
             } else {
-                renderer.draw(c, t, x, y, w, h)
+                tile(c, t, x, y, w, h)
                 x += w
             }
         }
@@ -190,7 +260,8 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
                 id == selected -> Color.rgb(0xFF, 0xC1, 0x07)
                 else -> 0
             }
-            renderer.draw(c, id, x, y - raised, tw, th, highlightColor = hl, dimmed = allowed.isNotEmpty() && !canDiscard, depth = th * 0.09f)
+            renderer.draw(c, id, x, y - raised, tw, th, highlightColor = hl, dimmed = allowed.isNotEmpty() && !canDiscard,
+                depth = th * if (perspective) 0.16f else 0.09f)
             handRects += id to RectF(x, y - raised, x + tw, y + th)
             x += tw
         }
@@ -236,16 +307,16 @@ class TableView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     }
 
     private fun drawDoraHud(c: Canvas, g: Game) {
-        val dw = rw * 0.85f; val dh = dw * 1.36f
+        val dw = hud * 0.85f; val dh = dw * 1.36f
         // Right of the left opponent's hand column.
-        val x0 = rw * 1.9f
-        val box = RectF(x0, rw * 0.3f, x0 + dw * 5.4f, rw * 0.3f + dh + rw * 0.75f)
-        c.drawRoundRect(box, rw * 0.2f, rw * 0.2f, panel)
-        small.textSize = rw * 0.38f
-        c.drawText(context.getString(io.github.mahjongapp.R.string.dora), box.left + rw * 0.2f, box.top + rw * 0.5f, small)
+        val x0 = hud * 1.9f
+        val box = RectF(x0, hud * 0.3f, x0 + dw * 5.4f, hud * 0.3f + dh + hud * 0.75f)
+        c.drawRoundRect(box, hud * 0.2f, hud * 0.2f, panel)
+        small.textSize = hud * 0.38f
+        c.drawText(context.getString(io.github.mahjongapp.R.string.dora), box.left + hud * 0.2f, box.top + hud * 0.5f, small)
         for (i in 0 until 5) {
             val id = g.doraIndicators.getOrNull(i)
-            renderer.draw(c, id ?: 0, box.left + rw * 0.2f + i * dw, box.top + rw * 0.65f, dw, dh, faceDown = id == null)
+            renderer.draw(c, id ?: 0, box.left + hud * 0.2f + i * dw, box.top + hud * 0.65f, dw, dh, faceDown = id == null)
         }
     }
 
