@@ -13,7 +13,7 @@ class TileRenderer(private val redFives: () -> Boolean) {
     private val face = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xFB, 0xF8, 0xF0) }
     private val side = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xD9, 0xCF, 0xB8) }
     private val back = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xE0, 0x8A, 0x2E) }
-    private val backRim = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xF6, 0xE7, 0xC8) }
+    private val backSide = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xB8, 0x6A, 0x1E) }
     private val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.argb(90, 0, 0, 0) }
     private val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(70, 0, 0, 0) }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -59,7 +59,7 @@ class TileRenderer(private val redFives: () -> Boolean) {
             r.set(-tw / 2 + d * 0.3f, -th / 2 + d * 0.6f, tw / 2 + d * 0.3f, th / 2 + d * 0.6f)
             canvas.drawRoundRect(r, rad, rad, shadow)
             r.set(-tw / 2, -th / 2 + d, tw / 2, th / 2)
-            canvas.drawRoundRect(r, rad, rad, if (faceDown) back else side)
+            canvas.drawRoundRect(r, rad, rad, if (faceDown) backSide else side)
             faceBottom = th / 2 - d
         } else {
             // 2.5D: a tile lying on the table shows its edge towards the viewer (world +y). In this
@@ -69,14 +69,13 @@ class TileRenderer(private val redFives: () -> Boolean) {
             r.set(-tw / 2 + dx * 1.6f, -th / 2 + dy * 1.6f, tw / 2 + dx * 1.6f, th / 2 + dy * 1.6f)
             canvas.drawRoundRect(r, rad, rad, shadow)
             r.set(-tw / 2 + dx, -th / 2 + dy, tw / 2 + dx, th / 2 + dy)
-            canvas.drawRoundRect(r, rad, rad, if (faceDown) back else side)
+            canvas.drawRoundRect(r, rad, rad, if (faceDown) backSide else side)
             faceBottom = th / 2
         }
         r.set(-tw / 2, -th / 2, tw / 2, faceBottom)
         if (faceDown) {
-            canvas.drawRoundRect(r, rad, rad, backRim)
-            r.inset(tw * 0.08f, tw * 0.08f)
-            canvas.drawRoundRect(r, rad * 0.7f, rad * 0.7f, back)
+            // Plain back: one colour, no pattern (the darker body below shows the thickness).
+            canvas.drawRoundRect(r, rad, rad, back)
         } else {
             canvas.drawRoundRect(r, rad, rad, face)
             outline.strokeWidth = maxOf(1f, tw * 0.02f)

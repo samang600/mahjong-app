@@ -39,4 +39,17 @@
     <string name="rank">%1$d위 %2$s  %3$d</string>
     <string name="view_2d">2D 화면으로 보기</string>
     <string name="view_25d">2.5D 화면으로 보기</string>
+    <string name="assist_menu">화면 인식 보조 (시험판)</string>
+    <string name="assist_title">마작 화면 인식 보조</string>
+    <string name="assist_channel">화면 인식 보조</string>
+    <string name="assist_running">게임 화면에서 AI 버튼을 누르세요. 길게 누르면 종료됩니다.</string>
+    <string name="assist_stop">종료</string>
+    <string name="assist_ready">내 차례에 AI를 누르세요</string>
+    <string name="assist_analyzing">분석 중…</string>
+    <string name="assist_no_frame">아직 화면을 받지 못했습니다. 다시 눌러 주세요</string>
+    <string name="assist_not_found">화면에서 손패를 찾지 못했습니다</string>
+    <string name="assist_seen">인식: %1$s</string>
+    <string name="assist_waiting">텐파이 · 대기: %1$s</string>
+    <string name="assist_need_overlay">“다른 앱 위에 표시” 권한을 허용한 뒤 다시 시작해 주세요.</string>
+    <string name="assist_started">보조 기능 시작: 내 차례에 빨간 AI 버튼을 누르세요.</string>
 </resources>

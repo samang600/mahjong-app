@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.mahjongapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2"
+        versionCode = 3
+        versionName = "0.3"
     }
 
     buildTypes {
@@ -37,6 +37,7 @@ android {
             System.getenv("ROBOLECTRIC_REPO_URL")?.let { test.systemProperty("robolectric.dependency.repo.url", it) }
             test.systemProperty("screenshotDir", layout.buildDirectory.dir("screenshots").get().asFile.path)
             test.testLogging { showStandardStreams = true }
+            System.getenv("RECOGNITION_FAILURE_DIR")?.let { test.environment("RECOGNITION_FAILURE_DIR", it) }
         }
     }
 }

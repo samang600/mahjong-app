@@ -297,15 +297,7 @@ class MainActivity : Activity() {
 
     private fun playerName(seat: Int) = if (seat == HUMAN) getString(R.string.you) else getString(R.string.cpu, seat)
 
-    fun tileName(kind: Int): String {
-        val ko = Locale.getDefault().language == "ko"
-        return when {
-            kind < 27 && ko -> "${kind % 9 + 1}${"만통삭"[kind / 9]}"
-            kind < 27 -> Tiles.name(kind)
-            ko -> listOf("동", "남", "서", "북", "백", "발", "중")[kind - 27]
-            else -> listOf("East", "South", "West", "North", "White", "Green", "Red")[kind - 27]
-        }
-    }
+    fun tileName(kind: Int): String = io.github.mahjongapp.ui.TileNames.of(kind)
 
     private fun winText(w: WinInfo): String {
         val sb = StringBuilder()
@@ -379,6 +371,7 @@ class MainActivity : Activity() {
             getString(R.string.settings_red) + if (red) "  ✓" else "",
             getString(R.string.settings_kuitan) + if (kuitan) "  ✓" else "",
             getString(R.string.about),
+            getString(R.string.assist_menu),
         )
         AlertDialog.Builder(this).setItems(items) { _, i ->
             when (i - 1) {
@@ -388,6 +381,7 @@ class MainActivity : Activity() {
                 2 -> { prefs.edit().putBoolean("red", !red).apply(); setInfo(getString(R.string.rules_next_game)) }
                 3 -> { prefs.edit().putBoolean("kuitan", !kuitan).apply(); setInfo(getString(R.string.rules_next_game)) }
                 4 -> AlertDialog.Builder(this).setTitle(R.string.app_name).setMessage(R.string.about_text).setPositiveButton(android.R.string.ok, null).show()
+                5 -> startActivity(android.content.Intent(this, io.github.mahjongapp.assist.AssistStartActivity::class.java))
             }
         }.show()
     }
