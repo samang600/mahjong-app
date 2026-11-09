@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">마작</string>
+    <string name="dora">도라</string>
+    <string name="tsumo">쯔모</string>
+    <string name="ron">론</string>
+    <string name="riichi">리치</string>
+    <string name="chi">치</string>
+    <string name="pon">퐁</string>
+    <string name="kan">깡</string>
+    <string name="skip">패스</string>
+    <string name="hint">힌트</string>
+    <string name="menu">메뉴</string>
+    <string name="you">나</string>
+    <string name="cpu">CPU %1$d</string>
+    <string name="hint_text">힌트: %1$s 버리기 · %2$s · 유효패 %3$d장</string>
+    <string name="hint_defend">힌트: 방어 — %1$s 이(가) 가장 안전합니다</string>
+    <string name="tenpai">텐파이</string>
+    <string name="shanten">%1$d향청</string>
+    <string name="riichi_pick">리치하며 버릴 패를 고르세요</string>
+    <string name="chi_pick">어떤 치를 할까요?</string>
+    <string name="round_draw">유국</string>
+    <string name="tenpai_players">텐파이: %1$s</string>
+    <string name="nobody">없음</string>
+    <string name="win_title">%1$s 화료 (%2$s)</string>
+    <string name="win_from">%1$s: %2$s 에게서 론</string>
+    <string name="han_fu">%1$d판 %2$d부</string>
+    <string name="points">%1$d점</string>
+    <string name="next">다음</string>
+    <string name="game_over">대국 종료</string>
+    <string name="new_game">새 대국</string>
+    <string name="east_game">새 동풍전</string>
+    <string name="south_game">새 반장전</string>
+    <string name="settings_red">적도라</string>
+    <string name="settings_kuitan">쿠이탕 (울고 탕야오)</string>
+    <string name="rules_next_game">규칙 변경은 다음 대국부터 적용됩니다.</string>
+    <string name="about">정보</string>
+    <string name="about_text">CPU 3명과 두는 리치 마작입니다.\n\nCPU와 힌트는 패 효율(향청수·유효패)과 리치 상대 방어를 기준으로 판단합니다.</string>
+    <string name="rank">%1$d위 %2$s  %3$d</string>
+</resources>

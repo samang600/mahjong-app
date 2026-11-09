@@ -1,4 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mahjong</string>
+    <string name="dora">Dora</string>
+    <string name="tsumo">Tsumo</string>
+    <string name="ron">Ron</string>
+    <string name="riichi">Riichi</string>
+    <string name="chi">Chi</string>
+    <string name="pon">Pon</string>
+    <string name="kan">Kan</string>
+    <string name="skip">Skip</string>
+    <string name="hint">Hint</string>
+    <string name="menu">Menu</string>
+    <string name="you">You</string>
+    <string name="cpu">CPU %1$d</string>
+    <string name="hint_text">Hint: discard %1$s · %2$s · %3$d tiles accept</string>
+    <string name="hint_defend">Hint: defend — %1$s is the safest discard</string>
+    <string name="tenpai">tenpai</string>
+    <string name="shanten">%1$d-shanten</string>
+    <string name="riichi_pick">Choose the tile to discard for riichi</string>
+    <string name="chi_pick">Which chi?</string>
+    <string name="round_draw">Exhaustive draw</string>
+    <string name="tenpai_players">Tenpai: %1$s</string>
+    <string name="nobody">nobody</string>
+    <string name="win_title">%1$s wins (%2$s)</string>
+    <string name="win_from">%1$s: Ron from %2$s</string>
+    <string name="han_fu">%1$d han %2$d fu</string>
+    <string name="points">%1$d points</string>
+    <string name="next">Next</string>
+    <string name="game_over">Game over</string>
+    <string name="new_game">New game</string>
+    <string name="east_game">New east-only game</string>
+    <string name="south_game">New east+south game</string>
+    <string name="settings_red">Red fives</string>
+    <string name="settings_kuitan">Open tanyao (kuitan)</string>
+    <string name="rules_next_game">Rule changes apply from the next game.</string>
+    <string name="about">About</string>
+    <string name="about_text">Riichi mahjong against three CPU players.\n\nThe CPU and the hint use tile efficiency (shanten and tile acceptance) and defence against riichi.</string>
+    <string name="rank">%1$d. %2$s  %3$d</string>
 </resources>

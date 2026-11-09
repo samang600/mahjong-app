@@ -397,6 +397,8 @@ class Game(val rules: Rules = Rules(), seed: Long = System.nanoTime()) {
 
     // ------------------------------------------------------------------ call responses
 
+    fun hasResponded(seat: Int) = seat in responses
+
     fun respond(seat: Int, action: CallAction) {
         check(phase == Phase.CALLS && seat in pendingCalls && seat !in responses)
         responses[seat] = action
