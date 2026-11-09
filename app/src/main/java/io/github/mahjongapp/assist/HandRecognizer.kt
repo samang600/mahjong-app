@@ -60,7 +60,7 @@ class HandRecognizer {
 
         // 1. Hand band: rows near the bottom where tiles cover the left part of the screen. The hand
         //    always starts at the left edge and melds are at the right, so measure only the left
-        //    35% (a hand of 2 tiles after 4 calls still covers ~40% of it).
+        //    35% (a hand of 2 tiles after 4 calls covers ~30% of it, less on rows through symbols).
         val probeW = (w * 0.35f).toInt()
         val rowFrac = FloatArray(h) { y ->
             var n = 0
@@ -68,14 +68,19 @@ class HandRecognizer {
             while (x < probeW) { if (isCream(px[y * w + x])) n++; x += 2 }
             n * 2f / probeW
         }
+        // Adaptive threshold: 40% of the best row's coverage near the bottom (a full hand ≈ 0.95,
+        // a 2-tile hand ≈ 0.3), so both a full and a nearly empty hand form one band.
+        var maxFrac = 0f
+        for (y in (h * 0.65f).toInt() until h) maxFrac = maxOf(maxFrac, rowFrac[y])
+        val thr = maxOf(0.08f, maxFrac * 0.4f)
         var y1 = -1
-        for (y in h - 1 downTo h / 2) if (rowFrac[y] > 0.2f) { y1 = y; break }
+        for (y in h - 1 downTo h / 2) if (rowFrac[y] > thr) { y1 = y; break }
         if (y1 < 0) return null
         // Extend upwards, tolerating a few rows of tile outlines (dark on dimmed tiles).
         var y0 = y1
         val gapTol = maxOf(2, h / 150)
         while (true) {
-            val next = (1..gapTol).firstOrNull { d -> y0 - d > h / 2 && rowFrac[y0 - d] > 0.2f } ?: break
+            val next = (1..gapTol).firstOrNull { d -> y0 - d > h / 2 && rowFrac[y0 - d] > thr } ?: break
             y0 -= next
         }
         val bandH = y1 - y0 + 1

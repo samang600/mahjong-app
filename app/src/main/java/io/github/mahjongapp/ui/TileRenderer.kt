@@ -24,6 +24,7 @@ class TileRenderer(private val redFives: () -> Boolean) {
     private val highlight = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val dim = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(110, 0, 0, 0) }
     private val r = RectF()
+    private val stickRect = RectF()
 
     companion object {
         val BLUE = Color.rgb(0x15, 0x65, 0xC0)
@@ -159,8 +160,9 @@ class TileRenderer(private val redFives: () -> Boolean) {
         val px = f.left + x * f.width(); val py = f.top + y * f.height()
         val sw = f.width() * 0.11f; val sh = f.height() * hh
         fill.color = color
-        r.set(px - sw / 2, py - sh / 2, px + sw / 2, py + sh / 2)
-        c.drawRoundRect(r, sw / 2, sw / 2, fill)
+        // Own rectangle: `r` holds the face outline, still needed after the face is drawn (dimming).
+        stickRect.set(px - sw / 2, py - sh / 2, px + sw / 2, py + sh / 2)
+        c.drawRoundRect(stickRect, sw / 2, sw / 2, fill)
         fill.color = Color.WHITE
         c.drawRect(px - sw / 2, py - sh * 0.04f, px + sw / 2, py + sh * 0.04f, fill)
     }

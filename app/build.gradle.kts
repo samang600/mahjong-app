@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.mahjongapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3"
+        versionCode = 4
+        versionName = "0.4"
     }
 
     buildTypes {
@@ -38,6 +38,7 @@ android {
             test.systemProperty("screenshotDir", layout.buildDirectory.dir("screenshots").get().asFile.path)
             test.testLogging { showStandardStreams = true }
             System.getenv("RECOGNITION_FAILURE_DIR")?.let { test.environment("RECOGNITION_FAILURE_DIR", it) }
+            System.getenv("STRATEGY_GAMES")?.let { test.environment("STRATEGY_GAMES", it) }
         }
     }
 }

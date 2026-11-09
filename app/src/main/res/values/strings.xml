@@ -52,4 +52,13 @@
     <string name="assist_waiting">Tenpai, waiting on %1$s</string>
     <string name="assist_need_overlay">Allow “display over other apps”, then start the assistant again.</string>
     <string name="assist_started">Assistant started: tap the red AI button during your turn.</string>
+    <string name="assist_dora">Dora %1$s</string>
+    <string name="assist_riichi">Riichi: %1$s</string>
+    <string name="assist_calls">Calls: %1$s</string>
+    <string-array name="assist_seats">
+        <item>you</item>
+        <item>right</item>
+        <item>across</item>
+        <item>left</item>
+    </string-array>
 </resources>

@@ -40,19 +40,17 @@ object Ai {
             return Advice(TurnAction.Kakan(opts.kakan[0]), emptyList(), false)
         }
 
-        val evals = evaluateDiscards(game, seat, opts.discardable)
-        val threats = game.players.filter { it.seat != seat && it.riichi > 0 }
-        val defending = threats.isNotEmpty() && p.riichi == 0 && evals.minOf { it.shanten } >= 1 &&
-            !(evals.minOf { it.shanten } == 1 && game.wallRemaining > 30)
-
-        val choice = if (defending) {
-            evals.minWith(compareBy<DiscardEval> { it.danger }.thenBy { it.shanten }.thenByDescending { it.ukeire })
-        } else {
-            evals.minWith(compareBy<DiscardEval> { it.shanten }.thenByDescending { it.ukeire }
-                .thenByDescending { isolationValue(counts, Tiles.kind(it.id)) }
-                .thenBy { keepValue(game, it.id) }
-                .thenBy { it.danger })
+        // Discard choice: shared strategy (unseen acceptance, value, threats, defence).
+        val sit = Strategy.situationOf(game, seat)
+        val red = game.rules.redFives
+        val candTiles = opts.discardable.map { HandTile(Tiles.kind(it), Tiles.isRed(it, red)) }
+        val decision = Strategy.decide(sit, candTiles)!!
+        val evals = decision.ranked.map { e ->
+            val id = opts.discardable.first { Tiles.kind(it) == e.kind && Tiles.isRed(it, red) == e.red }
+            DiscardEval(id, e.shanten, e.ukeire, e.danger.toInt())
         }
+        val defending = decision.defending
+        val choice = evals.first()
         val riichi = choice.id in opts.riichiDiscards && choice.shanten == 0
         return Advice(TurnAction.Discard(choice.id, riichi), evals, defending)
     }

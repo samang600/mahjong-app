@@ -52,4 +52,13 @@
     <string name="assist_waiting">텐파이 · 대기: %1$s</string>
     <string name="assist_need_overlay">“다른 앱 위에 표시” 권한을 허용한 뒤 다시 시작해 주세요.</string>
     <string name="assist_started">보조 기능 시작: 내 차례에 빨간 AI 버튼을 누르세요.</string>
+    <string name="assist_dora">도라 %1$s</string>
+    <string name="assist_riichi">리치: %1$s</string>
+    <string name="assist_calls">울음: %1$s</string>
+    <string-array name="assist_seats">
+        <item>나</item>
+        <item>하가</item>
+        <item>대면</item>
+        <item>상가</item>
+    </string-array>
 </resources>

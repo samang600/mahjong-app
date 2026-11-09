@@ -2,7 +2,7 @@
 
 Japanese riichi mahjong against three CPU players, with a hint that recommends your discard.
 
-## Features (v0.3)
+## Features (v0.4)
 
 - **Rules**: 4 players, 136 tiles with red fives (optional), open tanyao (optional), east-only or
   east+south games. Chi / pon / kans (closed, added, open) with replacement draws and kan dora,
@@ -11,9 +11,12 @@ Japanese riichi mahjong against three CPU players, with a hint that recommends y
   game ends after the last round or when someone drops below zero.
 - **Scoring**: all standard yaku and yakuman, fu with wait shapes, limit hands (mangan to kazoe
   yakuman); the best interpretation of the hand is chosen.
-- **CPU / hint**: tile efficiency (shanten and number of accepting tiles), defence against riichi
-  (genbutsu, suji, visible honors), call and riichi decisions. The hint shows the recommended discard,
-  shanten and acceptance.
+- **Shared strategy** (`core/Strategy`, used by the CPU, the in-game hint and the screen assistant):
+  acceptance counts only unseen tiles (rivers, melds, dora indicators), hand value (dora, red fives,
+  yakuhai pairs), a threat model for riichi and open hands (number of calls, flush, yakuhai / dora
+  calls) and threat-weighted danger (genbutsu, suji, visible honors, flush suit) to decide between
+  attack and defence. Against the previous CPU over 2000 games: average rank 2.458 vs 2.514,
+  deal-in 12.6% vs 14.0% of rounds.
 - **2.5D table** (default): the table is drawn in perspective (a homography from the table rectangle
   to a trapezoid), tiles on the table show their edge towards the viewer, and your hand stands in
   front. **2D table** (top view) available from the menu. Everything is drawn in code (no image
@@ -23,12 +26,16 @@ Japanese riichi mahjong against three CPU players, with a hint that recommends y
   allowing "display over other apps" and screen capture, a floating **AI** button stays on screen;
   tap it on your turn to capture the screen, recognise your hand and show the recommended discard
   with a ring around the tile (long-press the button or use the notification to stop).
-  Recognition (`assist/HandRecognizer`) works from pixels only: it finds the band of tile faces at
-  the bottom, splits it into tiles and matches each against templates drawn by the app's own tile
-  renderer (brightness-normalised, small position search). It is tuned for this app's screens (2D
-  and 2.5D); advice uses only the hand (shanten / acceptance), not rivers or dora.
-  Tested on screenshots of real games: 100% of hands read exactly (hundreds of screens, including
-  selected, highlighted and dimmed tiles and hands with calls).
+  The whole table is read from the screenshot (`assist/ScreenReader`): the hand (found from pixels),
+  dora indicators, all four rivers (riichi tile drawn sideways, tiles taken by calls dimmed) and every
+  player's melds (including added and closed kans), in the 2D and 2.5D views. The table geometry is
+  shared with the view (`ui/TableLayout`); at each place the reader decides from the pixels whether a
+  tile is there, its orientation and which tile it is (templates drawn by the app's renderer at the
+  same size, sampled through the perspective of that spot). The advice then uses the same shared
+  strategy as the CPU (seat / round wind and the wall count are not read).
+  Tested at every player turn of real games (~820 screens, 2D and 2.5D): hand and dora 100%,
+  rivers ≥ 99.5%, melds 100% (2D) / 97.6% (2.5D), advice identical to the strategy's advice on
+  the true game state in 819 of 820 screens.
 - Tile backs are plain (no pattern).
 
 Not yet: abortive draws (four winds, nine terminals, ...), nagashi
@@ -50,8 +57,10 @@ JDK 17+ and the Android SDK (platform 35):
 ## Structure
 
 - `core/` — pure Kotlin, no Android: `Tiles`, `Shanten`, `Scoring` (yaku / fu / points),
-  `Game` (state machine), `Ai`.
-- `ui/` — `TableView` (2D table), `TileRenderer` (tile faces), `YakuNames`.
-- `assist/` — `HandRecognizer` (screenshot → hand), `AssistAnalyzer` (→ advice), `OverlayService`
+  `Game` (state machine), `Strategy` (shared discard decision), `Ai` (CPU turns and calls).
+- `ui/` — `TableView` (2D / 2.5D table), `TableLayout` (shared geometry), `TileRenderer` (tile faces),
+  `YakuNames`, `TileNames`.
+- `assist/` — `HandRecognizer` (screenshot → hand), `ScreenReader` (→ whole table),
+  `AssistAnalyzer` (→ situation → advice), `OverlayService`
   (MediaProjection capture, floating button, marker), `AssistStartActivity` (permissions).
 - `MainActivity` — game loop, player actions, dialogs.

@@ -78,6 +78,15 @@ class HandRecognizerTest {
 
     private fun buttons(group: ViewGroup) = (0 until group.childCount).map { group.getChildAt(it) as Button }
 
+    class Tally {
+        var screens = 0; var dora = 0; var riverTiles = 0; var riverOk = 0; var melds = 0; var meldOk = 0; var advice = 0
+        val notes = ArrayList<String>()
+        fun note(s: String) { if (notes.size < 8) notes += s }
+        override fun toString() = "screens=$screens dora=$dora/$screens riverTiles=$riverOk/$riverTiles melds=$meldOk/$melds advice=$advice/$screens"
+    }
+
+    private val tally = Tally()
+
     private fun run(view3d: Boolean, seedRounds: Int): Pair<Int, Int> {
         RuntimeEnvironment.getApplication().getSharedPreferences("mahjong", Context.MODE_PRIVATE)
             .edit().clear().putBoolean("view3d", view3d).commit()
@@ -121,10 +130,29 @@ class HandRecognizerTest {
                     File(dir, "recognition_failure_${if (view3d) "25d" else "2d"}_${System.nanoTime()}.png").outputStream().use { screenshot(activity).compress(Bitmap.CompressFormat.PNG, 100, it) }
                     println("MISMATCH expected=${expected.map { Tiles.name(Tiles.kind(it)) }} seen=${seen?.tiles?.map { Tiles.name(it.kind) + if (it.red) "r" else "" }} drawnSep=${seen?.drawnSeparated}")
                 }
-                // The overlay's analyser: same advice as for the true hand, and it marks a tile of that kind.
+                // The overlay's analyser: the whole table read from the screen must match the game,
+                // and the advice must equal the shared strategy's advice on the true situation.
                 val result = analyzer.analyze(screenshot(activity))
-                val truth = HandAdvisor.advise(expected.map(Tiles::kind))!!
-                assertEquals(truth.best?.kind, result.recommendedKind)
+                val st = result.state!!
+                tally.screens++
+                if (st.doraIndicators == g.doraIndicators.map(Tiles::kind)) tally.dora++ else tally.note("dora ${st.doraIndicators} vs ${g.doraIndicators.map(Tiles::kind)}")
+                for (rel in 0 until 4) {
+                    val q = g.players[rel]
+                    val r = st.rivers[rel]
+                    tally.riverTiles += q.river.size
+                    if (r.kinds == q.river.map { Tiles.kind(it.id) } && r.calledAway == q.river.map { it.calledAway } &&
+                        r.riichiIndex == q.river.indexOfFirst { it.riichi }) tally.riverOk += q.river.size
+                    else {
+                        tally.note("river rel=$rel seen=${r.kinds}/${r.riichiIndex}/${r.calledAway.count { it }} true=${q.river.map { Tiles.kind(it.id) }}/${q.river.indexOfFirst { it.riichi }}/${q.river.count { it.calledAway }}")
+                    }
+                    val trueMelds = q.melds.map { m -> m.tiles.map(Tiles::kind).sorted() }.sortedBy { it.toString() }
+                    val seenMelds = st.melds[rel].map { it.sorted() }.sortedBy { it.toString() }
+                    tally.melds += trueMelds.size
+                    if (seenMelds == trueMelds) tally.meldOk += trueMelds.size else tally.note("melds rel=$rel seen=$seenMelds true=$trueMelds")
+                }
+                val truthSit = io.github.mahjongapp.core.Strategy.situationOf(g, 0).copy(seatWind = null, roundWind = null, wallRemaining = null)
+                val truth = io.github.mahjongapp.core.Strategy.decide(truthSit)!!
+                if (truth.best.kind == result.recommendedKind) tally.advice++ else tally.note("advice ${result.recommendedKind} vs ${truth.best.kind}")
                 val mark = result.mark
                 if (mark != null) {
                     val markedIdx = seen!!.tiles.indexOfFirst { it.rect == mark }
@@ -182,6 +210,8 @@ class HandRecognizerTest {
     fun recognisesTheHandIn25D() {
         val (checked, correct) = run(view3d = true, seedRounds = 4)
         println("2.5D recognition: $correct / $checked screens exactly right")
+        println("2.5D table: $tally"); tally.notes.forEach { println("  NOTE $it") }
+        assertEquals(tally.screens, tally.dora); assertEquals(tally.riverTiles, tally.riverOk); assertEquals(tally.melds, tally.meldOk); assertEquals(tally.screens, tally.advice)
         assertTrue(checked > 20)
         assertEquals(checked, correct)
     }
@@ -190,6 +220,8 @@ class HandRecognizerTest {
     fun recognisesTheHandIn2D() {
         val (checked, correct) = run(view3d = false, seedRounds = 4)
         println("2D recognition: $correct / $checked screens exactly right")
+        println("2D table: $tally"); tally.notes.forEach { println("  NOTE $it") }
+        assertEquals(tally.screens, tally.dora); assertEquals(tally.riverTiles, tally.riverOk); assertEquals(tally.melds, tally.meldOk); assertEquals(tally.screens, tally.advice)
         assertTrue(checked > 20)
         assertEquals(checked, correct)
     }
